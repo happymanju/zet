@@ -1,22 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"os"
 
-	"github.com/mpiastucki/zet/zet"
+	"github.com/happymanju/zet/cli"
 )
 
 func main() {
-	z := zet.NewZet()
-	t, err := zet.ParseTags("a.md")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("updating")
-	z.UpdateFile("a.md", t)
-	fmt.Println(z.Files)
-	fmt.Println(z.Tags)
-
+	os.Exit(cli.Run(os.Args[1:]))
 }
