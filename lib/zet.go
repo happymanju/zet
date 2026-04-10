@@ -11,8 +11,49 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 )
+
+func Timestamp() string {
+	t := time.Now()
+	y, m, d := t.Date()
+	currentHour := t.Hour()
+	currentMin := t.Minute()
+
+	var stringedMonth string = ""
+	var stringedDay string = ""
+	var stringedHour string = ""
+	var stringedMin string = ""
+
+	if m < 10 {
+		stringedMonth = "0" + strconv.Itoa(int(m))
+	} else {
+		stringedMonth = strconv.Itoa(int(m))
+	}
+
+	if d < 10 {
+		stringedDay = "0" + strconv.Itoa(d)
+	} else {
+		stringedDay = strconv.Itoa(int(d))
+	}
+
+	if currentHour < 10 {
+		stringedHour = fmt.Sprintf("0%d", currentHour)
+	} else {
+		stringedHour = strconv.Itoa(currentHour)
+	}
+
+	if currentMin < 10 {
+		stringedMin = fmt.Sprintf("0%d", currentMin)
+	} else {
+		stringedMin = strconv.Itoa(currentMin)
+	}
+
+	return fmt.Sprintf("%v%s%vT%v%v", y, stringedMonth, stringedDay, stringedHour, stringedMin)
+
+}
 
 func ParseTags(fp string) (tags []string, err error) {
 	f, err := os.Open(filepath.Clean(fp))
@@ -100,6 +141,31 @@ func (z *Zet) Save(fp string) error {
 	return nil
 }
 
+func (z *Zet) NewFile(title string, initialTags string) (titlestring string, err error) {
+	tstamp := Timestamp()
+	titlestring = strings.ToLower(title)
+	titlestring = tstamp + "_" + strings.ReplaceAll(titlestring, " ", "_") + ".md"
+	f, err := os.Create(titlestring)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	bw := bufio.NewWriter(f)
+
+	frontmatter := fmt.Sprintf("---\ntags:%s\n---", initialTags)
+	_, err = bw.Write([]byte(frontmatter))
+	if err != nil {
+		return "", err
+	}
+	err = bw.Flush()
+	if err != nil {
+		return "", err
+	}
+
+	return titlestring, nil
+}
+
 func (z *Zet) AddFile(fp string) error {
 	_, ok := z.FilesToTags[fp]
 	if !ok {
@@ -173,4 +239,25 @@ func (z *Zet) GetFilesByTag(tag string) []string {
 		}
 	}
 	return foundFiles
+}
+
+func (z *Zet) GetFilesByTitle(keyword string) []string {
+	foundFiles := []string{}
+	files := maps.Keys(z.FilesToTags)
+	for file := range files {
+		if strings.Contains(strings.ToLower(file), strings.ToLower(keyword)) {
+			foundFiles = append(foundFiles, file)
+		}
+	}
+	return foundFiles
+}
+
+func (z *Zet) FindTags(keyword string) []string {
+	foundTags := []string{}
+	for _, tag := range z.Tags {
+		if strings.Contains(tag, keyword) {
+			foundTags = append(foundTags, tag)
+		}
+	}
+	return foundTags
 }
