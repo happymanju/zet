@@ -174,3 +174,24 @@ func (z *Zet) GetFilesByTag(tag string) []string {
 	}
 	return foundFiles
 }
+
+func (z *Zet) GetFilesByTitle(keyword string) []string {
+	foundFiles := []string{}
+	files := maps.Keys(z.FilesToTags)
+	for file := range files {
+		if strings.Contains(strings.ToLower(file), strings.ToLower(keyword)) {
+			foundFiles = append(foundFiles, file)
+		}
+	}
+	return foundFiles
+}
+
+func (z *Zet) FindTags(keyword string) []string {
+	foundTags := []string{}
+	for _, tag := range z.Tags {
+		if strings.Contains(tag, keyword) {
+			foundTags = append(foundTags, tag)
+		}
+	}
+	return foundTags
+}

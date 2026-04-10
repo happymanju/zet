@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"strings"
@@ -35,8 +36,22 @@ func Run(args []string) int {
 	case "del":
 		z.RemoveFile(args[1])
 		cacheModified = true
+	case "rebuild":
+		dirEntries, err := fs.ReadDir(os.DirFS("."), ".")
+		if err != nil {
+			log.Println(err)
+			break
+		}
+		z.Tags = []string{}
+		z.FilesToTags = map[string][]string{}
+		for _, entry := range dirEntries {
+			if !entry.IsDir() && entry.Name() != defaultCache {
+				z.AddFile(entry.Name())
+			}
+		}
+
 	case "-h":
-		fmt.Println("add, update, del, tag -a -s -f")
+		fmt.Println("add, update, del, search, rebuild, tag -a -s -f")
 
 	case "tag":
 		sc := bufio.NewScanner(os.Stdin)
@@ -60,11 +75,31 @@ func Run(args []string) int {
 			sc.Scan()
 			t := sc.Text()
 			foundFiles := z.GetFilesByTag(t)
-			if foundFiles != nil {
-				for _, file := range foundFiles {
-					fmt.Println(file)
-				}
+			if foundFiles == nil {
+				break
 			}
+			for _, file := range foundFiles {
+				fmt.Println(file)
+			}
+		}
+	case "search":
+		foundTags := z.FindTags(args[1])
+		foundFiles := z.GetFilesByTitle(args[1])
+		foundFilesByTag := z.GetFilesByTag(args[1])
+
+		fmt.Println("Found Tags:")
+		for _, v := range foundTags {
+			fmt.Println(v)
+		}
+
+		fmt.Println("Found File Titles:")
+		for _, file := range foundFiles {
+			fmt.Println(file)
+		}
+
+		fmt.Println("Found Files by Tag:")
+		for _, file := range foundFilesByTag {
+			fmt.Println(file)
 		}
 	}
 
